@@ -14,4 +14,6 @@ Functions:
 - dialset(short ch,char pose,short x,short y,string words,double sp,bool force)
 - bgchar(short col,string a)
 - bgrect(char f,short xs,short ys,short xe,short ye)
+
+
 Use these functions at `roomchg.cpp`
