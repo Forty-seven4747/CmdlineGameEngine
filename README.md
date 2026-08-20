@@ -44,7 +44,7 @@ You can also use Dev-C++ to edit.
 |short|key||
 |short|room|0|
 |short|x|5|
-|stort|y|5|
+|short|y|5|
 |short|prex|-1|
 |short|prey|-1|
 |int|hp||
