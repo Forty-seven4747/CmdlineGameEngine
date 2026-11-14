@@ -25,7 +25,7 @@ void creationset(char pose,short initx,short inity,string words,int freq,short n
 	if(cre[ch].roomat!=room)crerase(ch);//reset it when the room changes
 	if(cre[ch].trig)return;//only set once in the same room
 	cre[ch].tick=tick;
-	cre[ch].trig=47;//47 just means true here
+	cre[ch].trig=47;
 	cre[ch].pose=pose;
 	cre[ch].x=initx;
 	cre[ch].y=inity;
@@ -63,9 +63,9 @@ void creationupdate(){//move all creations every frame
 			short nx=cre[i].x+cre[i].deltax[cre[i].mdpoint];
 			short ny=cre[i].y+cre[i].deltay[cre[i].mdpoint];//one step from the table
 			bool blocked=false;
-			if(nx<0 or nx>=lim or ny<0 or ny>=lim)blocked=true;
-			else if(gra[nx][ny]=='#')blocked=true;//do not walk into a wall
-			else if(nx==x and ny==y)blocked=true;//do not stand on the player
+			if(nx<0 or nx>=lim or ny<0 or ny>=lim)blocked=47;
+			else if(gra[nx][ny]=='#')blocked=47;//do not walk into a wall
+			else if(nx==x and ny==y)blocked=47;//do not stand on the player
 			else for(int j=0;cre[j].pose!='\0';j++)
 				if(j!=i and cre[j].x==nx and cre[j].y==ny){blocked=true;break;}
 			if(blocked){nx=cre[i].x;ny=cre[i].y;}//stay when blocked
@@ -87,7 +87,7 @@ void creationupdate(){//move all creations every frame
 			if(gra[precx][precy]=='#')continue;//do not walk into a wall
 			bool hit=false;
 			for(int j=0;cre[j].pose!='\0';j++)
-				if(j!=i and cre[j].x==precx and cre[j].y==precy){hit=true;break;}
+				if(j!=i and cre[j].x==precx and cre[j].y==precy){hit=47;break;}
 			if(hit)continue;//do not stand on another creation
 			if(precx==x and precy==y)continue;//do not stand on the player
 			cre[i].x=precx;

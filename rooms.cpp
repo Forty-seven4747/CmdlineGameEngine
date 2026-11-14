@@ -1,6 +1,7 @@
 #include"globals.h"
 #include"creation.h"
 void roomchg(short r){
+	creacur=0;
 	switch(r){
 		case 0:{
 		    bgrect('#',0,0,2,2);
@@ -26,9 +27,9 @@ void roomchg(short r){
 			bgchar(1,"Movedelta");
 			for(int i=0;i<3;i++)creationset('a',2+i,3*i+2,"Baa...");
 			//for(int i=1;i<5;i++)crerase(i);
-			creationset('a',4,4,"Don't run!",20,0,0,{1,0,-1,0},{0,1,0,-1},0,0);//the two tables are a square path, one pair per move
-            creationset('a',5,5,"SO WHAT!",20,0,0,{-1,0,1,0},{0,-1,0,1},0,0);
-            creationset('b',5,1,"You touched me!",50,0,0,vector<short>(),vector<short>(),0,1);//empty tables mean constant speed instead
+			creationset('a',7,7,"Don't run!",20,0,0,{1,0,-1,0},{0,1,0,-1},0,0);//the two tables are a square path, one pair per move
+            creationset('a',8,8,"SO WHAT!",20,0,0,{-1,0,1,0},{0,-1,0,1},0,0);
+            creationset('b',6,1,"You touched me!",9,0,0,vector<short>(),vector<short>(),0,1);//empty tables mean constant speed instead
 			doorset(0,0,9,2,8,0);
 			break;
 		}
@@ -40,5 +41,5 @@ void roomchg(short r){
 			bgchar(8,"report");
 			bgchar(9,"with this!");
 		}
-	}
+	}for(int i=creacur;i<cremax and cre[i].pose!='\0';i++)crerase(i);
 }

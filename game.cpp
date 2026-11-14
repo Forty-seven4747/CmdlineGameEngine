@@ -30,11 +30,16 @@ int getConsoleLength(){
     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
     if (!GetConsoleScreenBufferInfo(h, &csbi)) return -1;
 	return csbi.srWindow.Right-csbi.srWindow.Left+1;
-}//initiatal not original
+}//initial not original
 void gotoxy(int x, int y) {
     COORD coord; coord.X = x; coord.Y = y;
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }//not original
+
+bool sthhere(int x,int y){
+	if(gra[x][y]!='#' and x>=0 and x<lim and y>=0 and y<lim)return 0;
+	return 47;
+}
 
 void doorset(short ch,short x,short y,int gt,short tox,short toy){
 	d[ch].x=x;
@@ -110,6 +115,24 @@ void bgrect(char f,short xs,short ys,short xe,short ye){//replace the background
 	    for(short j=ys;j<=ye;j++)
 	        gra[i][j]=f;
 }
+bool checkDoor(){//room changed, so graph has to lay it again
+	for(int i=0;i<doormax;i++)
+		if(d[i].x>=0 and d[i].x==x and d[i].y==y){//x=-1 means an empty door slot
+			room=d[i].gt;
+			x=d[i].tox;y=d[i].toy;
+			prex=x;prey=y;
+			return 47;
+		}
+	return 0;
+}
+void gracre(){//graph creations
+	for(int i=0;i<doormax and d[i].x!=-1;i++)
+		if(d[i].x>=0 and d[i].x<lim and d[i].y>=0 and d[i].y<lim)gra[d[i].x][d[i].y]='O';
+	for(int i=0;i<dialmax and dial[i].words!="";i++)
+		if(dial[i].x>=0 and dial[i].x<lim and dial[i].y>=0 and dial[i].y<lim)gra[dial[i].x][dial[i].y]=dial[i].pose;
+	for(int i=0;i<cremax and cre[i].pose!='\0';i++)
+		if(cre[i].x>=0 and cre[i].x<lim and cre[i].y>=0 and cre[i].y<lim)gra[cre[i].x][cre[i].y]=cre[i].pose;
+}
 void updMChara(){
 	if(x<0)x=0;//clamp before touching gra, the arrow keys can go outside
 	if(x>lim-1)x=lim-1;
@@ -117,17 +140,6 @@ void updMChara(){
 	if(y>lim-1)y=lim-1;
 	if(prex<0 or prey<0){prex=x;prey=y;}
 	if(gra[x][y]=='#'){x=prex;y=prey;}
-	for(int i=0;i<doormax;i++)
-		if(d[i].x>=0 and d[i].x==x and d[i].y==y){//x=-1 means an empty door slot
-			short tox=d[i].tox,toy=d[i].toy;//save first, roomchg will lay new doors over d
-			memset(gra,bgch,sizeof(gra));
-			room=d[i].gt;
-			roomchg(room);
-			x=tox;y=toy;
-			memset(d,-1,sizeof(d));
-			prex=x;prey=y;
-			break;
-		}
 	for(int i=0;i<dialmax and dial[i].words!="";i++)
 	    if(dial[i].x==x and dial[i].y==y){
 	    	x=prex;y=prey;
@@ -136,7 +148,11 @@ void updMChara(){
 		}
 	for(int i=0;i<cremax;i++)
 		if(cre[i].pose!='\0' and cre[i].x==x and cre[i].y==y){
-			x=prex;y=prey;
+			if(!sthhere(prex,prey)){x=prex;y=prey;}
+			else if(sthhere(x-1,y))x--;
+			else if(sthhere(x+1,y))x++;
+			else if(sthhere(x,y-1))y--;
+			else if(sthhere(x,y+1))y++;
 			dialword(cre[i].words);
 		}
 	if(x<0)x=0;
@@ -150,20 +166,22 @@ void updMChara(){
 	   gra[prex][prey]=prech;
 }
 
-void graph(short r=room){
+void graph(){
 	gotoxy(0,0);
-	memset(d,-1,sizeof(d));
-	memset(gra,bgch,sizeof(gra));
-	for(int i=0;i<dialmax;i++){
-        dial[i].pose=dial[i].x=dial[i].y=-1;
-        dial[i].words.clear();
-        dial[i].speed=1.0;
-    }
-	roomchg(r);//every frame lays the room again, so nothing has to be undone by hand
-	for(int i=0;d[i].x!=-1;i++)gra[d[i].x][d[i].y]='O';
-	for(int i=0;dial[i].words!="";i++)gra[dial[i].x][dial[i].y]=dial[i].pose;
-	for(int i=0;cre[i].pose!='\0';i++)gra[cre[i].x][cre[i].y]=cre[i].pose;
+	for(int pass=0;pass<2;pass++){//a door can change the room, then everything is laid again
+		memset(d,-1,sizeof(d));
+		memset(gra,bgch,sizeof(gra));
+		for(int i=0;i<dialmax;i++){
+	        dial[i].pose=dial[i].x=dial[i].y=-1;
+	        dial[i].words.clear();
+	        dial[i].speed=1.0;
+	    }
+		roomchg(room);
+		if(checkDoor())continue;
+		break;
+	}
 	creationupdate();
+	gracre();
 	updMChara();
 	for(int i=0;i<lim;i++){
 	    for(int j=0;j<lim;j++)
@@ -190,7 +208,7 @@ int main(){
 		   }
 	    }else;
 	    graph();
-	    tick++;//creations count ticks to decide when to move
+	    tick++;
 	}system("cls");
 	cout<<"bye!"<<endl<<endl<<endl;
 }
