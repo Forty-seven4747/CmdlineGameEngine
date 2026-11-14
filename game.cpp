@@ -1,7 +1,7 @@
 #include"globals.h"
 #include"creation.h"
 int randomint(int min,int max){
-	if(max==-47)return rand()%min;
+	if(max==-47)return rand()%min;//-47 is the sign for a range starting at zero
 	if(min>max)return rand()%(min-max)+max;
 	return rand()%(max-min)+min;
 }
@@ -30,7 +30,7 @@ int getConsoleLength(){
     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
     if (!GetConsoleScreenBufferInfo(h, &csbi)) return -1;
 	return csbi.srWindow.Right-csbi.srWindow.Left+1;
-}//initation not original
+}//initiatal not original
 void gotoxy(int x, int y) {
     COORD coord; coord.X = x; coord.Y = y;
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
@@ -39,19 +39,19 @@ void gotoxy(int x, int y) {
 void doorset(short ch,short x,short y,int gt,short tox,short toy){
 	d[ch].x=x;
 	d[ch].y=y;
-	d[ch].gt=gt;
-	d[ch].tox=tox;
-	d[ch].toy=toy;
+	d[ch].gt=gt;//goto a room
+	d[ch].tox=tox;//place player to x axis of that room
+	d[ch].toy=toy;//place player to y axis of that room
 }
-int findfroom(int r=room){
+int findfroom(int r=room){//r is not used, the search always uses the global room
 	for(int i=0;i<froomax;i++)
 	    if(forcedia[i].room==room)
 	        return i;
 	return -1;
 }
-void dialword(string word){
+void dialword(string word){//dialouge of a word
 	gotoxy(0,lim+3);
-	cout<<string(getConsoleLength()*10,' ');
+	cout<<string(getConsoleLength()*10,' ');//wipe the line, ten times wider to be safe
 	dialpool.resize(word.length());
 	for(int i=0;i<word.length();i++){
 		dialpool[i]=word[i];
@@ -59,28 +59,30 @@ void dialword(string word){
 	    cout<<dialpool;
 		Sleep(47);
 	}dialpool="";
+	while(_kbhit())_getwch();//throw away keys pressed while reading
 	gotoxy(0,0);
 }
-void dialogue(short ch=0){
-	if(ch>dialmax or ch<0)return;
+void dialogue(short ch=0){//dialouge of a creation
+	if(ch>=dialmax or ch<0)return;
 	gotoxy(0,lim+3);
 	cout<<string(getConsoleLength()*10,' ');
 	wordpool.resize(dial[ch].words.length());
 	for(int i=0;i<dial[ch].words.length();i++){
 		wordpool[i]=dial[ch].words[i];
-		for(int j=1;j<=floor(200*dial[ch].speed);j++){
+		for(int j=1;j<=floor(200*dial[ch].speed);j++){//empty loop, a bigger speed holds a letter longer
 			gotoxy(0,lim+3);
 		    cout<<wordpool;
 	    }
 	}wordpool="";
-	if(findfroom()>=0)forcedia[findfroom()].trig=true;
+	while(_kbhit())_getwch();
+	if(findfroom()>=0)forcedia[findfroom()].trig=true;//a forced dialogue plays only once
 	gotoxy(0,0);
 }
-void dialset(short ch,char pose,short x,short y,string words,double sp,bool force){
-	if(force){
+void dialset(short ch,char pose,short x,short y,string words,double sp,bool force){//place a creation but just can dialogue
+	if(force){//the last slot is kept for a dialogue that plays by itself
 		dial[dialmax-1].pose='x';
 		dial[dialmax-1].x=-2;
-		dial[dialmax-1].y=-1;
+		dial[dialmax-1].y=-1;//off the map, so the player can never step on it
 		dial[dialmax-1].words=words;
 		dial[dialmax-1].speed=1.0;
 		if(findfroom()<0){
@@ -88,48 +90,52 @@ void dialset(short ch,char pose,short x,short y,string words,double sp,bool forc
 			forcedia[fdcur].trig=0;
 			fdcur++;
 		}return;
-	}if(ch>dialmax or ch<0)return;
-	dial[ch].pose=pose;
+	}if(ch>=dialmax or ch<0)return;
+	dial[ch].pose=pose;//that decides what creation looks like
 	dial[ch].x=x;
 	dial[ch].y=y;
 	dial[ch].words=words;
-	dial[ch].speed=sp;
+	dial[ch].speed=sp;//speed of speaking
 }
 
-void bgchar(short col,string a){
+void bgchar(short col,string a){//replace the background by a line of characters
 	if(a.length()>lim)return;
 	for(short i=0;a[i]!='\0';i++)
 	    gra[col][i]=a[i];
 }
-void bgrect(char f,short xs,short ys,short xe,short ye){
-	if(xs<0 or ys<0 or xe<0 or ye<0)return;
+void bgrect(char f,short xs,short ys,short xe,short ye){//replace the background by rectangle made of a character
+	if(xs<0 or ys<0 or xe<0 or ye<0)return;//s=start, e=end
 	if(xs>lim or ys>lim or xe>lim or ye>lim)return;
 	for(short i=xs;i<=xe;i++)
 	    for(short j=ys;j<=ye;j++)
 	        gra[i][j]=f;
 }
 void updMChara(){
+	if(x<0)x=0;//clamp before touching gra, the arrow keys can go outside
+	if(x>lim-1)x=lim-1;
+	if(y<0)y=0;
+	if(y>lim-1)y=lim-1;
+	if(prex<0 or prey<0){prex=x;prey=y;}
 	if(gra[x][y]=='#'){x=prex;y=prey;}
 	for(int i=0;i<doormax;i++)
-		if(d[i].x==x and d[i].y==y){
-			short tox=d[i].tox,toy=d[i].toy;
+		if(d[i].x>=0 and d[i].x==x and d[i].y==y){//x=-1 means an empty door slot
+			short tox=d[i].tox,toy=d[i].toy;//save first, roomchg will lay new doors over d
 			memset(gra,bgch,sizeof(gra));
 			room=d[i].gt;
 			roomchg(room);
-			x=tox;
-			y=toy;
+			x=tox;y=toy;
 			memset(d,-1,sizeof(d));
-			prex=prey=-1;
+			prex=x;prey=y;
 			break;
 		}
-	for(int i=0;i<dialmax;i++)
+	for(int i=0;i<dialmax and dial[i].words!="";i++)
 	    if(dial[i].x==x and dial[i].y==y){
 	    	x=prex;y=prey;
 	    	dialogue(i);
 	    	gotoxy(0,0);
 		}
 	for(int i=0;i<cremax;i++)
-		if(cre[i].x==x and cre[i].y==y){
+		if(cre[i].pose!='\0' and cre[i].x==x and cre[i].y==y){
 			x=prex;y=prey;
 			dialword(cre[i].words);
 		}
@@ -137,9 +143,10 @@ void updMChara(){
 	if(x>lim-1)x=lim-1;
 	if(y<0)y=0;
 	if(y>lim-1)y=lim-1;
-	prech=gra[prex][prey];
+	if(prex>=0 and prey>=0 and prex<lim and prey<lim)prech=gra[prex][prey];
+	else prech=bgch;
 	gra[x][y]='@';
-	if((prex!=x or prey!=y)and prex!=-1 and prey!=-1)
+	if((prex!=x or prey!=y)and prex>=0 and prey>=0 and prex<lim and prey<lim)
 	   gra[prex][prey]=prech;
 }
 
@@ -148,11 +155,11 @@ void graph(short r=room){
 	memset(d,-1,sizeof(d));
 	memset(gra,bgch,sizeof(gra));
 	for(int i=0;i<dialmax;i++){
-        dial[i].pose=dial[i].x=dial[i].y=0;
+        dial[i].pose=dial[i].x=dial[i].y=-1;
         dial[i].words.clear();
         dial[i].speed=1.0;
     }
-	roomchg(r);
+	roomchg(r);//every frame lays the room again, so nothing has to be undone by hand
 	for(int i=0;d[i].x!=-1;i++)gra[d[i].x][d[i].y]='O';
 	for(int i=0;dial[i].words!="";i++)gra[dial[i].x][dial[i].y]=dial[i].pose;
 	for(int i=0;cre[i].pose!='\0';i++)gra[cre[i].x][cre[i].y]=cre[i].pose;
@@ -162,7 +169,7 @@ void graph(short r=room){
 	    for(int j=0;j<lim;j++)
 	        cout<<gra[i][j]<<' ';
 	    cout<<endl;
-	}if(findfroom()>=0 and !forcedia[findfroom()].trig)dialogue(dialmax-1);
+	}if(findfroom()>=0 and !forcedia[findfroom()].trig)dialogue(dialmax-1);//the forced dialogue waits in the last slot
 }
 int main(){
 	hidecursor();
@@ -172,8 +179,8 @@ int main(){
 	while(true){
 		if(_kbhit()){
 			key=_getwch();
-			if(key==0x1b)break;
-			if(key==0xe0){
+			if(key==0x1b)break;//esc quits
+			if(key==0xe0){//0xe0 starts an arrow key, 0x48/50/4b/4d are up/down/left/right
 				key=_getwch();
 				prex=x;prey=y;
 				if(key==0x48)x--;
@@ -183,7 +190,7 @@ int main(){
 		   }
 	    }else;
 	    graph();
-	    tick++;
+	    tick++;//creations count ticks to decide when to move
 	}system("cls");
 	cout<<"bye!"<<endl<<endl<<endl;
 }
